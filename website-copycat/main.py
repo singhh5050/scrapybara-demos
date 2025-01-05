@@ -59,7 +59,7 @@ Your approach should be:
 3. Use internal CSS and vanilla JavaScript only - no external dependencies
 4. Focus on visual similarity, not functionality
 5. Compare your result with the original screenshot and improve
-6. Examine the DOM carefully to capture original image sources
+6. Use original image sources found in the HTML, do not make up new ones
 """
 
 
@@ -260,7 +260,7 @@ class ToolCollection:
 
 async def main():
     # Load environment variables from .env file
-    load_dotenv()
+    load_dotenv(override=True)
 
     copycat = WebsiteCopycat(
         scrapybara_api_key=os.getenv("SCRAPYBARA_API_KEY"),
