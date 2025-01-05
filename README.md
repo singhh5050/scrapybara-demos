@@ -35,8 +35,6 @@ A demonstration of Scrapybara's agent endpoints for automated data collection an
 
 ## Prerequisites
 
-- Python 3.11 or higher
-- Poetry
 - Scrapybara API key (get one at [scrapybara.com](https://scrapybara.com))
 
 ## Getting Started

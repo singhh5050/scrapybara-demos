@@ -103,7 +103,7 @@ Window configuration can be modified in `index.js`:
 ```javascript
 {
   width: 400,
-  height: 150,
+  height: 80,
   frame: false,
   transparent: true,
   webPreferences: {
@@ -113,6 +113,12 @@ Window configuration can be modified in `index.js`:
   }
 }
 ```
+
+## Roadmap
+
+- [ ] Agent pause/resume
+- [ ] Send screenshots
+- [ ] Browse and upload local files
 
 ## Contributing
 

@@ -9,7 +9,7 @@ let ws = null;
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 400,
-    height: 150, // Start smaller initially
+    height: 80, // Start smaller initially
     frame: false,
     transparent: true,
     webPreferences: {
@@ -46,10 +46,11 @@ ipcMain.handle("connect-websocket", async (event) => {
 
       // Modify this to create a larger window for better viewing
       if (message.type === "stream_url") {
-        mainWindow.setSize(800, 600);
+        mainWindow.setSize(800, 702);
       }
     });
 
+    mainWindow.setSize(400, 110);
     return true;
   } catch (error) {
     console.error("WebSocket connection error:", error);
