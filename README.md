@@ -17,50 +17,56 @@
 
 ## Demos
 
-### W25 - Dec 22, 2024
+### DCSS Game Agent
 
-- Learn how to use the new agent endpoints (act, scrape).
-- Scrape YC W25 companies, find the best way to contact them, and draft messages to them.
+An AI-powered agent that plays Dungeon Crawl Stone Soup autonomously, making real-time decisions and demonstrating complex game interactions. [Learn more](dcss-agent/)
 
-```bash
-cd w25
-poetry run python main.py
-```
+### Website Copycat
 
-## Local Development
+An AI tool that creates single-file replicas of websites, demonstrating visual analysis and HTML generation capabilities. [Learn more](website-copycat/)
 
-### Prerequisites
+### Teleo Desktop Assistant
+
+A lightweight Electron application that provides a seamless interface for interacting with AI agents in virtual desktop environments. [Learn more](teleo/)
+
+### W25 Scraping
+
+A demonstration of Scrapybara's agent endpoints for automated data collection and processing of YC W25 companies. [Learn more](w25-scraping/)
+
+## Prerequisites
 
 - Python 3.11 or higher
 - Poetry
+- Scrapybara API key (get one at [scrapybara.com](https://scrapybara.com))
 
-### Installation
+## Getting Started
 
 1. Clone the repository
 
 ```bash
-git clone https://github.com/scrapybara/scrapybara-playground.git
-cd scrapybara-playground
+git clone https://github.com/scrapybara/scrapybara-demos.git
+cd scrapybara-demos
 ```
 
-2. Install dependencies using Poetry
+2. Choose a demo project and follow its README for specific setup instructions.
 
-```bash
-poetry install
+## Project Structure
+
 ```
-
-3. Set up environment variables
-
-```bash
-cp .env.example .env
-```
-
-Edit the `.env` file with your configuration:
-
-```env
-SCRAPYBARA_API_KEY=""
+scrapybara-demos/
+├── dcss-agent/         # AI-powered game playing agent
+├── teleo/             # Desktop assistant for AI agents
+├── w25-scraping/      # YC W25 company data scraping
+├── website-copycat/   # Website replication tool
+└── README.md
 ```
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Community
+
+- Follow us on [X/Twitter](https://x.com/scrapybara)
+- Join our [Discord](https://discord.gg/s4bPUVFXqA)
+- Report issues on [GitHub](https://github.com/Scrapybara/scrapybara-demos/issues)

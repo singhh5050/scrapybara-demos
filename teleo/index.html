@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Teleo</title>
+  <style>
+    body {
+      background-color: rgba(0, 0, 0, 0.3);
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .titlebar {
+      height: 30px;
+      background: rgb(20, 20, 20);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 10px;
+      -webkit-app-region: drag;
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    .window-control {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .close { background: #ff5f57; }
+    .minimize { background: #febc2e; }
+    
+    .widget {
+      background-color: rgba(0, 0, 0, 0.3);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    input {
+      width: calc(100% - 24px);
+      height: 36px;
+      padding: 0 12px;
+      margin: 0;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(0, 0, 0, 0.3);
+      color: white;
+      font-size: 14px;
+      -webkit-app-region: no-drag;
+    }
+
+    button {
+      height: 36px;
+      padding: 0 20px;
+      border-radius: 6px;
+      border: none;
+      background: #0066cc;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      -webkit-app-region: no-drag;
+      align-self: flex-start;
+    }
+
+    /* Hide noVNC control bar */
+    iframe {
+      border: none;
+      border-radius: 6px;
+    }
+    :root {
+      --noVNC-control-bar-anchor-display: none !important;
+    }
+
+    .status-line {
+      font-size: 12px;
+      color: #888;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 4px 0;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #startButton {
+      width: 100%;
+      margin-bottom: 8px;
+    }
+
+    #vnc {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      border: none;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="titlebar">
+    <span>Teleo</span>
+    <div class="window-controls">
+      <div class="window-control minimize"></div>
+      <div class="window-control close"></div>
+    </div>
+  </div>
+  <div class="widget">
+    <button id="startButton">Start Agent</button>
+    <iframe 
+      id="vnc"
+      class="hidden"
+    ></iframe>
+    <input 
+      type="text" 
+      id="commandInput" 
+      placeholder="Enter your command..."
+      onkeydown="if (event.key === 'Enter') executeCommand()"
+    >
+    <button onclick="executeCommand()">Execute</button>
+    <div class="status-line" id="statusLine"></div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    // Window controls
+    document.querySelector('.close').addEventListener('click', () => {
+      window.close();
+    });
+    
+    document.querySelector('.minimize').addEventListener('click', () => {
+      ipcRenderer.send('minimize-window');
+    });
+
+    // Start button handler
+    document.getElementById('startButton').addEventListener('click', async () => {
+      const connected = await ipcRenderer.invoke('connect-websocket');
+      if (connected) {
+        document.getElementById('startButton').style.display = 'none';
+      }
+    });
+
+    // Handle websocket messages
+    ipcRenderer.on('websocket-message', (event, message) => {
+      switch (message.type) {
+        case 'stream_url':
+          const vnc = document.getElementById('vnc');
+          vnc.src = message.url + "?resize=scale&autoconnect=1";
+          vnc.classList.remove('hidden');
+          break;
+        
+        case 'text':
+          document.getElementById('statusLine').textContent = message.content;
+          break;
+        
+        case 'tool_result':
+          if (message.output || message.error) {
+            document.getElementById('statusLine').textContent = message.output || message.error;
+          }
+          break;
+      }
+    });
+
+    async function executeCommand() {
+      const input = document.getElementById('commandInput').value;
+      if (!input.trim()) return;
+      
+      try {
+        await ipcRenderer.invoke('send-command', input);
+        document.getElementById('commandInput').value = '';
+      } catch (error) {
+        console.error('Error sending command:', error);
+      }
+    }
+  </script>
+</body>
+</html>
