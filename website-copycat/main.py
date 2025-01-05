@@ -59,7 +59,9 @@ Your approach should be:
 3. Use internal CSS and vanilla JavaScript only - no external dependencies
 4. Focus on visual similarity, not functionality
 5. Compare your result with the original screenshot and improve
+6. Examine the DOM carefully to capture original image sources
 """
+
 
 class WebsiteCopycat:
     def __init__(self, scrapybara_api_key: str, anthropic_api_key: str):
@@ -68,17 +70,17 @@ class WebsiteCopycat:
         self.instance = None
         self.browser = None
         self.page = None
-        
+
     async def start(self):
         """Start Scrapybara instance and browser"""
         print("Starting Scrapybara instance...")
         self.instance = self.scrapybara.start(instance_type="small")
         print("Instance started: ", self.instance.id)
-        
+
         # Start browser session
         cdp_url = self.instance.browser.start().cdp_url
         print("CDP URL: ", cdp_url)
-        
+
         # Connect with Playwright async
         playwright = await async_playwright().start()
         self.browser = await playwright.chromium.connect_over_cdp(cdp_url)
@@ -89,69 +91,78 @@ class WebsiteCopycat:
         """Capture website content and screenshot"""
         print(f"Capturing website: {url}")
         await self.page.goto(url)
-        
+
         # Wait and scroll for dynamic content
         await self.page.wait_for_timeout(3000)
         await self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
         await self.page.wait_for_timeout(2000)
-        
+
         # Get content and screenshot
         content = await self.page.content()
         await self.page.evaluate("window.scrollTo(0, 0)")
-        screenshot = await self.page.screenshot(path="/tmp/original.png", full_page=True)
-        
+        screenshot = await self.page.screenshot(
+            path="/tmp/original.png", full_page=True
+        )
+
         return content, base64.b64encode(screenshot).decode()
-    
+
     def create_system_prompt(self, html_content: str):
-        return SYSTEM_PROMPT + f"""
+        return (
+            SYSTEM_PROMPT
+            + f"""
     
 I'll show you a website's HTML content and screenshot. Create a single index.html file that replicates this website's appearance.
 
 Here's the original website content:
-{html_content[:20000]}... (truncated)
+{html_content[:50000]}... (truncated)
 
 Let's start by creating index.html and adding the initial HTML structure.
 Once you've created the file, open it in Chrome to check how it looks.
 Everytime you make a change, inspect the result by reloading it in the browser and taking a screenshot.
 Do not exit the loop or stop making tool calls until you've opened the file in Chrome and visually inspected it using screenshot at least once.
 Once you've inspected the file, compare it with the original screenshot and improve if needed, or provide your final reasoning in text about why it's satisfactory."""
+        )
 
     async def replicate_website(self, html_content: str, screenshot: str):
         """Use Claude to create a replica of the website"""
         print("Starting website replication...")
-        
+
         tool_collection = ToolCollection(
             ComputerTool(self.instance),
             BashTool(self.instance),
-            EditTool(self.instance)
+            EditTool(self.instance),
         )
 
-        messages = [{
-            "role": "user",
-            "content": [
-                {
-                    "type": "text", 
-                    "text": f"""Here's a screenshot of the website you're trying to replicate:"""
-                },
-                {
-                    "type": "image",
-                    "source": {
-                        "type": "base64",
-                        "media_type": "image/png",
-                        "data": screenshot
-                    }
-                }
-            ]
-        }]
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": f"""Here's a screenshot of the website you're trying to replicate:""",
+                    },
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/png",
+                            "data": screenshot,
+                        },
+                    },
+                ],
+            }
+        ]
 
         while True:
             response = self.anthropic.beta.messages.create(
                 model="claude-3-5-sonnet-20241022",
                 max_tokens=8192,
                 messages=messages,
-                system=[{"type": "text", "text": self.create_system_prompt(html_content)}],
+                system=[
+                    {"type": "text", "text": self.create_system_prompt(html_content)}
+                ],
                 tools=tool_collection.to_params(),
-                betas=["computer-use-2024-10-22"]
+                betas=["computer-use-2024-10-22"],
             )
 
             response_params = [block.model_dump() for block in response.content]
@@ -164,60 +175,56 @@ Once you've inspected the file, compare it with the original screenshot and impr
                 elif block["type"] == "tool_use":
                     print(f"\nUsing tool: {block['name']}")
                     print(f"Tool input: {block['input']}")
-                    
+
                     result = await tool_collection.run(
-                        name=block["name"],
-                        tool_input=block["input"]
+                        name=block["name"], tool_input=block["input"]
                     )
                     print(f"Tool result: {result}")
 
                     # For bash commands with empty results, take a screenshot
                     if block["name"] == "bash" and (
-                        not result or (
-                            result.output == "" and 
-                            result.error == "" and 
-                            result.base64_image is None
+                        not result
+                        or (
+                            result.output == ""
+                            and result.error == ""
+                            and result.base64_image is None
                         )
                     ):
                         result = await tool_collection.run(
-                            name="computer",
-                            tool_input={"action": "screenshot"}
+                            name="computer", tool_input={"action": "screenshot"}
                         )
-                    
+
                     if result:
                         tool_result = {
                             "type": "tool_result",
                             "tool_use_id": block["id"],
-                            "content": [{
-                                "type": "text",
-                                "text": result.output
-                            }] if result.output else [],
-                            "is_error": bool(result.error)
+                            "content": (
+                                [{"type": "text", "text": result.output}]
+                                if result.output
+                                else []
+                            ),
+                            "is_error": bool(result.error),
                         }
-                        
+
                         if result.base64_image:
-                            tool_result["content"].append({
-                                "type": "image",
-                                "source": {
-                                    "type": "base64",
-                                    "media_type": "image/png",
-                                    "data": result.base64_image
+                            tool_result["content"].append(
+                                {
+                                    "type": "image",
+                                    "source": {
+                                        "type": "base64",
+                                        "media_type": "image/png",
+                                        "data": result.base64_image,
+                                    },
                                 }
-                            })
-                        
+                            )
+
                         tool_result_content.append(tool_result)
 
             # Update chat history
-            messages.append({
-                "role": "assistant",
-                "content": response_params
-            })
+            messages.append({"role": "assistant", "content": response_params})
 
             if tool_result_content:
-                messages.append({
-                    "role": "user",
-                    "content": tool_result_content
-                })
+                messages.append({"role": "user", "content": tool_result_content})
             else:
                 # If no tool results and Claude indicates completion, break
                 break
@@ -229,15 +236,17 @@ Once you've inspected the file, compare it with the original screenshot and impr
         if self.instance:
             self.instance.stop()
 
+
 class ToolCollection:
     """Tool collection for Claude"""
+
     def __init__(self, *tools):
         self.tools = tools
         self.tool_map = {tool.to_params()["name"]: tool for tool in tools}
-    
+
     def to_params(self) -> list:
         return [tool.to_params() for tool in self.tools]
-    
+
     async def run(self, *, name: str, tool_input: dict[str, Any]) -> ToolResult:
         tool = self.tool_map.get(name)
         if not tool:
@@ -248,15 +257,16 @@ class ToolCollection:
             print(f"Error running tool {name}: {e}")
             return None
 
+
 async def main():
     # Load environment variables from .env file
     load_dotenv()
-    
+
     copycat = WebsiteCopycat(
-        scrapybara_api_key=os.getenv('SCRAPYBARA_API_KEY'),
-        anthropic_api_key=os.getenv('ANTHROPIC_API_KEY')
+        scrapybara_api_key=os.getenv("SCRAPYBARA_API_KEY"),
+        anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
     )
-    
+
     try:
         await copycat.start()
         print("Scrapybara instance started")
@@ -265,6 +275,7 @@ async def main():
         await copycat.replicate_website(content, screenshot)
     finally:
         await copycat.cleanup()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
