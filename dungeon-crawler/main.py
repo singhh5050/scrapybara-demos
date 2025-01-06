@@ -62,35 +62,36 @@ Key information:
 - Read the messages at the bottom of the screen carefully
 - To exit the loop/game, type "quit" or "exit" in a text message response"""
 
+
 class GameAgent:
     def __init__(self, scrapybara_api_key: str, anthropic_api_key: str):
         self.scrapybara = Scrapybara(api_key=scrapybara_api_key, timeout=600)
         self.anthropic = Anthropic(api_key=anthropic_api_key)
         self.instance = None
-        
+
     def start(self):
         """Start Scrapybara instance and install game"""
         print("Starting Scrapybara instance...")
         self.instance = self.scrapybara.start(instance_type="large")
-        
+
         # Install DCSS using bash
         install_cmd = "sudo apt-get install -y crawl-tiles"
         self.instance.bash(command=install_cmd)
-        
+
     async def play_game(self):
         """Start the game and let Claude play"""
         print("Starting game session...")
 
         # Start the game
         self.instance.bash(command="(DISPLAY=:1 /usr/games/crawl-tiles &)")
-        
+
         # Setup tools for Claude
         tool_collection = ToolCollection(
             ComputerTool(self.instance),
             BashTool(self.instance),
-            EditTool(self.instance)
+            EditTool(self.instance),
         )
-        
+
         initial_prompt = """I've started Dungeon Crawl Stone Soup for you. 
 Let's create a character and start playing! 
 
@@ -98,10 +99,9 @@ Let's create a character and start playing!
 2. We'll create a beginner-friendly character
 3. Then you can start exploring the dungeon"""
 
-        messages = [{
-            "role": "user",
-            "content": [{"type": "text", "text": initial_prompt}]
-        }]
+        messages = [
+            {"role": "user", "content": [{"type": "text", "text": initial_prompt}]}
+        ]
 
         while True:
             response = self.anthropic.beta.messages.create(
@@ -110,7 +110,7 @@ Let's create a character and start playing!
                 messages=messages,
                 system=[{"type": "text", "text": SYSTEM_PROMPT}],
                 tools=tool_collection.to_params(),
-                betas=["computer-use-2024-10-22"]
+                betas=["computer-use-2024-10-22"],
             )
 
             response_params = [block.model_dump() for block in response.content]
@@ -118,8 +118,10 @@ Let's create a character and start playing!
 
             # Check if response contains text that's not an exit command
             has_non_exit_text = any(
-                block["type"] == "text" and 
-                not ("exit" in block["text"].lower() or "quit" in block["text"].lower())
+                block["type"] == "text"
+                and not (
+                    "exit" in block["text"].lower() or "quit" in block["text"].lower()
+                )
                 for block in response_params
             )
 
@@ -129,60 +131,62 @@ Let's create a character and start playing!
                     print(f"\nClaude: {block['text']}")
                 elif block["type"] == "tool_use":
                     print(f"\nUsing tool: {block['name']}")
-                    
+
                     result = await tool_collection.run(
-                        name=block["name"],
-                        tool_input=block["input"]
+                        name=block["name"], tool_input=block["input"]
                     )
-                    
+
                     if result:
                         tool_result = {
                             "type": "tool_result",
                             "tool_use_id": block["id"],
-                            "content": [{
-                                "type": "text",
-                                "text": result.output
-                            }] if result.output else [],
-                            "is_error": bool(result.error)
+                            "content": (
+                                [{"type": "text", "text": result.output}]
+                                if result.output
+                                else []
+                            ),
+                            "is_error": bool(result.error),
                         }
-                        
+
                         if result.base64_image:
-                            tool_result["content"].append({
-                                "type": "image",
-                                "source": {
-                                    "type": "base64",
-                                    "media_type": "image/png",
-                                    "data": result.base64_image
+                            tool_result["content"].append(
+                                {
+                                    "type": "image",
+                                    "source": {
+                                        "type": "base64",
+                                        "media_type": "image/png",
+                                        "data": result.base64_image,
+                                    },
                                 }
-                            })
-                        
+                            )
+
                         tool_result_content.append(tool_result)
 
             # Update chat history
-            messages.append({
-                "role": "assistant",
-                "content": response_params
-            })
+            messages.append({"role": "assistant", "content": response_params})
 
             if tool_result_content:
-                messages.append({
-                    "role": "user",
-                    "content": tool_result_content
-                })
+                messages.append({"role": "user", "content": tool_result_content})
             elif has_non_exit_text:
                 # Add the "keep playing" message if there was non-exit text
-                messages.append({
-                    "role": "user",
-                    "content": [{
-                        "type": "text",
-                        "text": "just keep playing the game and don't ask questions. if you want to exit, type 'exit' or 'quit' in a text message response"
-                    }]
-                })
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "just keep playing the game and don't ask questions. if you want to exit, type 'exit' or 'quit' in a text message response",
+                            }
+                        ],
+                    }
+                )
 
             # Check for game over or user interruption
-            if any("exit" in block["text"].lower() or "quit" in block["text"].lower()
-                  for block in response_params
-                  if block["type"] == "text"):
+            if any(
+                "exit" in block["text"].lower() or "quit" in block["text"].lower()
+                for block in response_params
+                if block["type"] == "text"
+            ):
                 break
 
     def cleanup(self):
@@ -190,15 +194,17 @@ Let's create a character and start playing!
         if self.instance:
             self.instance.stop()
 
+
 class ToolCollection:
     """Tool collection for Claude"""
+
     def __init__(self, *tools):
         self.tools = tools
         self.tool_map = {tool.to_params()["name"]: tool for tool in tools}
-    
+
     def to_params(self) -> list:
         return [tool.to_params() for tool in self.tools]
-    
+
     async def run(self, *, name: str, tool_input: dict[str, Any]) -> ToolResult:
         tool = self.tool_map.get(name)
         if not tool:
@@ -209,20 +215,22 @@ class ToolCollection:
             print(f"Error running tool {name}: {e}")
             return None
 
+
 async def main():
-    
-    load_dotenv()
+
+    load_dotenv(override=True)
 
     agent = GameAgent(
         scrapybara_api_key=os.getenv("SCRAPYBARA_API_KEY"),
-        anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
+        anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
     )
-    
+
     try:
         agent.start()
         await agent.play_game()
     finally:
         agent.cleanup()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
