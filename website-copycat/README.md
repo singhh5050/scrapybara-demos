@@ -102,6 +102,12 @@ SCRAPYBARA_API_KEY=your_scrapybara_api_key
 ANTHROPIC_API_KEY=your_anthropic_api_key
 ```
 
+## Roadmap
+
+- [ ] Chunk HTML content and generate website incrementally
+- [ ] Parse image sources and pass to Claude semantically
+- [ ] Interactive elements
+
 ## Contributing
 
 1. Fork the repository
