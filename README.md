@@ -33,6 +33,10 @@ A lightweight Electron application that provides a seamless interface for intera
 
 A demonstration of Scrapybara's agent endpoints for automated data collection and processing of YC W25 companies. [Learn more](w25-scraping/)
 
+### AI Resume Builder
+
+An automated resume tailoring system that uses LinkedIn job postings to generate customized resumes. The tool uses Scrapybara, Playwright, and Claude to analyze job requirements and create professionally formatted resumes optimized for ATS systems. [Learn more](resume-builder/)
+
 ## Prerequisites
 
 - Scrapybara API key (get one at [scrapybara.com](https://scrapybara.com))
