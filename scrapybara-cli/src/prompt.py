@@ -1,6 +1,6 @@
 from datetime import datetime
 
-SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
+UBUNTU_UBUNTU_SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 * You have access to an Ubuntu virtual machine with internet connectivity
 * You can install Ubuntu applications using the bash tool (use curl over wget)
 * To run GUI applications with the bash tool:

@@ -9,7 +9,7 @@ from scrapybara.anthropic import BashTool, ComputerTool, EditTool, ToolResult
 from dotenv import load_dotenv
 import os
 
-SYSTEM_PROMPT = """
+UBUNTU_UBUNTU_SYSTEM_PROMPT = """
 <SYSTEM_CAPABILITY>
 * You have access to an Ubuntu virtual machine with internet connectivity
 * You can install Ubuntu applications using the bash tool (use curl over wget)
@@ -106,9 +106,9 @@ class WebsiteCopycat:
 
         return content, base64.b64encode(screenshot).decode()
 
-    def create_system_prompt(self, html_content: str):
+    def create_UBUNTU_UBUNTU_SYSTEM_PROMPT(self, html_content: str):
         return (
-            SYSTEM_PROMPT
+            UBUNTU_UBUNTU_SYSTEM_PROMPT
             + f"""
     
 I'll show you a website's HTML content and screenshot. Create a single index.html file that replicates this website's appearance.
@@ -159,7 +159,7 @@ Once you've inspected the file, compare it with the original screenshot and impr
                 max_tokens=8192,
                 messages=messages,
                 system=[
-                    {"type": "text", "text": self.create_system_prompt(html_content)}
+                    {"type": "text", "text": self.create_UBUNTU_UBUNTU_SYSTEM_PROMPT(html_content)}
                 ],
                 tools=tool_collection.to_params(),
                 betas=["computer-use-2024-10-22"],

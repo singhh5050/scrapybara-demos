@@ -7,7 +7,7 @@ from scrapybara.anthropic import BashTool, ComputerTool, EditTool, ToolResult
 from dotenv import load_dotenv
 import os
 
-SYSTEM_PROMPT = """<SYSTEM_CAPABILITY>
+UBUNTU_UBUNTU_SYSTEM_PROMPT = """<SYSTEM_CAPABILITY>
 * You have access to an Ubuntu virtual machine with internet connectivity
 * You can install Ubuntu applications using the bash tool (use curl over wget)
 * To run GUI applications with the bash tool:
@@ -108,7 +108,7 @@ Let's create a character and start playing!
                 model="claude-3-5-sonnet-20241022",
                 max_tokens=4096,
                 messages=messages,
-                system=[{"type": "text", "text": SYSTEM_PROMPT}],
+                system=[{"type": "text", "text": UBUNTU_UBUNTU_SYSTEM_PROMPT}],
                 tools=tool_collection.to_params(),
                 betas=["computer-use-2024-10-22"],
             )

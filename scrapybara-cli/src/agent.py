@@ -1,4 +1,4 @@
-from .prompt import SYSTEM_PROMPT
+from .prompt import UBUNTU_UBUNTU_SYSTEM_PROMPT
 from .helpers import ToolCollection, make_tool_result
 from scrapybara.client import Instance
 from anthropic import Anthropic
@@ -19,7 +19,7 @@ async def run_agent(instance: Instance, tools: ToolCollection, prompt: str) -> N
             model="claude-3-5-sonnet-20241022",
             max_tokens=4096,
             messages=messages,
-            system=[{"type": "text", "text": SYSTEM_PROMPT}],
+            system=[{"type": "text", "text": UBUNTU_UBUNTU_SYSTEM_PROMPT}],
             tools=tools.to_params(),
             betas=["computer-use-2024-10-22"],
         )

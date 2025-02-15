@@ -39,7 +39,7 @@ ACT SDK (Primary Focus):
     ]
 
 3. Prompt:
-    - system: system prompt, recommend to use SYSTEM_PROMPT
+    - system: system prompt, recommend to use UBUNTU_UBUNTU_SYSTEM_PROMPT
     - prompt: simple user prompt
     - messages: list of messages
     - Only include either prompt or messages, not both
@@ -47,7 +47,7 @@ ACT SDK (Primary Focus):
 response = client.act(
     model=Anthropic(),
     tools=tools,
-    system=SYSTEM_PROMPT,
+    system=UBUNTU_UBUNTU_SYSTEM_PROMPT,
     prompt="Task",
     on_step=handle_step
 )
@@ -108,7 +108,7 @@ response = client.act(
     model=Anthropic(),
     tools=tools,
     schema=HNSchema,
-    system=SYSTEM_PROMPT,
+    system=UBUNTU_UBUNTU_SYSTEM_PROMPT,
     prompt="Get the top 10 posts on Hacker News",
 )
 posts = response.output.posts
@@ -123,7 +123,7 @@ Here's a brief example of how to use the Scrapybara SDK:
 
 from scrapybara import Scrapybara
 from scrapybara.anthropic import Anthropic
-from scrapybara.prompts import SYSTEM_PROMPT
+from scrapybara.prompts import UBUNTU_UBUNTU_SYSTEM_PROMPT
 from scrapybara.tools import BashTool, ComputerTool, EditTool, BrowserTool
 
 client = Scrapybara()
@@ -138,7 +138,7 @@ response = client.act(
         EditTool(instance),
         BrowserTool(instance),
     ],
-    system=SYSTEM_PROMPT,
+    system=UBUNTU_UBUNTU_SYSTEM_PROMPT,
     prompt="Go to the YC website and fetch the HTML",
     on_step=lambda step: print(f"{step}\n"),
 )
